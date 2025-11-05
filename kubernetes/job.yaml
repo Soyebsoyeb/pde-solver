@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pde-solver-training
+spec:
+  template:
+    spec:
+      containers:
+      - name: pde-solver
+        image: pde-solver:latest
+        command: ["python", "run_solver.py", "train", "configs/burgers_small.yaml"]
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "8Gi"
+            cpu: "4"
+            nvidia.com/gpu: 1
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        volumeMounts:
+        - name: config
+          mountPath: /workspace/configs
+        - name: outputs
+          mountPath: /workspace/outputs
+        - name: checkpoints
+          mountPath: /workspace/checkpoints
+      volumes:
+      - name: config
+        configMap:
+          name: pde-solver-config
+      - name: outputs
+        persistentVolumeClaim:
+          claimName: pde-solver-outputs
+      - name: checkpoints
+        persistentVolumeClaim:
+          claimName: pde-solver-checkpoints
+      restartPolicy: Never
+  backoffLimit: 3
+

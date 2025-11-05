@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  pde-solver:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    volumes:
+      - .:/workspace
+      - ./outputs:/workspace/outputs
+      - ./checkpoints:/workspace/checkpoints
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python examples/burgers_demo.py
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/workspace
+      - ./outputs:/workspace/outputs
+      - ./checkpoints:/workspace/checkpoints
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: uvicorn pde_solver.api.server:app --host 0.0.0.0 --port 8000
+

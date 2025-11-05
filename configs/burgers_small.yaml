@@ -1,0 +1,33 @@
+# Burgers equation configuration (small/fast)
+
+pde_type: burgers
+nu: 0.01
+
+# Domain
+x_domain: [-1.0, 1.0]
+t_domain: [0.0, 1.0]
+
+# Training points
+n_points: 5000
+n_ic: 500
+n_bc: 250
+
+# Model architecture
+hidden_dims: [128, 128, 128]
+
+# Training
+num_epochs: 500
+learning_rate: 1e-3
+batch_size: 512
+weight_residual: 1.0
+weight_boundary: 1.0
+weight_initial: 1.0
+
+# Classical solver (for comparison)
+nx: 256
+nt: 100
+
+# Logging
+use_wandb: false
+checkpoint_freq: 50
+

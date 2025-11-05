@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pde-solver
+  labels:
+    app: pde-solver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pde-solver
+  template:
+    metadata:
+      labels:
+        app: pde-solver
+    spec:
+      containers:
+      - name: pde-solver
+        image: pde-solver:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "8Gi"
+            cpu: "4"
+            nvidia.com/gpu: 1
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: WANDB_PROJECT
+          value: "pde-solver"
+        volumeMounts:
+        - name: data
+          mountPath: /workspace/data
+        - name: outputs
+          mountPath: /workspace/outputs
+        - name: checkpoints
+          mountPath: /workspace/checkpoints
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: pde-solver-data
+      - name: outputs
+        persistentVolumeClaim:
+          claimName: pde-solver-outputs
+      - name: checkpoints
+        persistentVolumeClaim:
+          claimName: pde-solver-checkpoints
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pde-solver-service
+spec:
+  selector:
+    app: pde-solver
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+

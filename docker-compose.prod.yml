@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  pde-solver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pde-solver:latest
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - WANDB_PROJECT=pde-solver-prod
+    volumes:
+      - ./data:/workspace/data:ro
+      - ./outputs:/workspace/outputs
+      - ./checkpoints:/workspace/checkpoints
+      - ./logs:/workspace/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pde_solver; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  wandb:
+    image: wandb/local:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - WANDB_BASE_URL=http://localhost:8080
+    volumes:
+      - wandb-data:/volumes/wandb
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+
+volumes:
+  wandb-data:
+  prometheus-data:
+  grafana-data:
+
